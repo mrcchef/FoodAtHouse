@@ -13,6 +13,7 @@ class UserProductItem extends StatelessWidget {
   UserProductItem({this.id, this.imageUrl, this.title});
   @override
   Widget build(BuildContext context) {
+    final scaffold = Scaffold.of(context);
     return ListTile(
       leading: CircleAvatar(
         backgroundImage: NetworkImage(
@@ -35,9 +36,23 @@ class UserProductItem extends StatelessWidget {
             ),
             IconButton(
               icon: Icon(Icons.delete),
-              onPressed: () {
-                Provider.of<ProductPackage>(context, listen: false)
-                    .removeItem(id);
+              onPressed: () async {
+                try {
+                  await Provider.of<ProductPackage>(context, listen: false)
+                      .removeItem(id);
+                } catch (error) {
+                  // Reason for declaring scafflod over future function b/c our
+                  // our app already get's updated and flutter confuses that weather
+                  // the context is same or updated so we so that context will be updated
+                  scaffold.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Deletion Failed!!!',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  );
+                }
               },
               color: Theme.of(context).accentColor,
             )

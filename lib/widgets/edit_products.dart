@@ -20,8 +20,14 @@ class _EditProductState extends State<EditProduct> {
       FormState>(); // Global Key is rarerly used and used to communicate with the
   // widget code
   // Global key of FormState provide us functionility like save ,reset,validate form
-  Product _existedProduct =
-      Product(id: null, title: '', description: '', price: 0, imageUrl: '');
+  Product _existedProduct = Product(
+    id: null,
+    title: '',
+    description: '',
+    price: 0,
+    imageUrl: '',
+    isFavourite: false,
+  );
   var productId;
   // values map we have created to print the intial values when user want to edit the
   // existing product
@@ -42,6 +48,7 @@ class _EditProductState extends State<EditProduct> {
     // as the _imageUrlFocusNode get's changed it will execute the passed function pointer
     // this we can achinve using addListner method
     _imageUrlFocusNode.addListener(updateImageUrl);
+
     super.initState();
   }
 
@@ -94,7 +101,9 @@ class _EditProductState extends State<EditProduct> {
     }
   }
 
-  void _saveForm() {
+  // similarly here we used async and await keyords to work with Future classes like in
+  // product_package.dart class
+  Future<void> _saveForm() async {
     // here we also have validate which will exexute all the validator field in the
     // TextFormField widgets
     bool isValid = _form.currentState.validate();
@@ -110,45 +119,45 @@ class _EditProductState extends State<EditProduct> {
     });
 
     if (productId != null) {
-      Provider.of<ProductPackage>(context, listen: false)
-          .updateItems(productId, _existedProduct);
-      setState(() {
-        _isLoading = false;
-      });
-      Navigator.of(context).pop();
+      try {
+        await Provider.of<ProductPackage>(context, listen: false)
+            .updateItems(productId, _existedProduct);
+      } catch (error) {
+        print(error);
+      }
     } else {
-      Provider.of<ProductPackage>(context, listen: false)
-          .addProduct(_existedProduct)
-          .catchError(
-        (error) {
-          return showDialog(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: Text("ERROR!!"),
-              content: Text(error.toString()),
-              actions: <Widget>[
-                FlatButton(
-                  onPressed: () {
-                    Navigator.of(ctx).pop();
-                    // setState(() {
-                    //   _isLoading = false;
-                    // });
-                    // Navigator.of(context).pop();
-                  },
-                  child: Text("Okay"),
-                ),
-              ],
-            ),
-          );
-        },
-      ).then((_) {
-        // Now we have successfully added product and now it's time to remove Progerss Bar
-        setState(() {
-          _isLoading = false;
-        });
-        Navigator.of(context).pop();
-      });
+      try {
+        await Provider.of<ProductPackage>(context, listen: false)
+            .addProduct(_existedProduct);
+      } catch (error) {
+        await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text("ERROR!!"),
+            content: Text(error.toString()),
+            actions: <Widget>[
+              FlatButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                },
+                child: Text("Okay"),
+              ),
+            ],
+          ),
+        );
+      }
+      // finally {
+      //   // Now we have successfully added product and now it's time to remove Progerss Bar
+      //   setState(() {
+      //     _isLoading = false;
+      //   });
+      //   Navigator.of(context).pop();
+      // }
     }
+    setState(() {
+      _isLoading = false;
+    });
+    Navigator.of(context).pop();
     // Navigator.of(context).pop();
     // print(_existedProduct.id);
     // print(_existedProduct.title);

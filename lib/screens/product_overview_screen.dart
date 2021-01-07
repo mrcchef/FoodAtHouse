@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../widgets/badge.dart';
 import '../providers/cart.dart';
 import '../widgets/products_grid.dart';
+import '../providers/product_package.dart';
 import './cart_screen.dart';
 
 enum menuOption {
@@ -21,6 +22,37 @@ class ProductOverviewScreen extends StatefulWidget {
 
 class _ProductOverviewScreenState extends State<ProductOverviewScreen> {
   bool _showOnlyFavourite = false;
+  bool _runDidDependencies = false;
+  bool _isLoading = false;
+
+  // Now we have to load our data from our server as we open our application
+  // for that we have two methods to implement it either we can doit in initState
+  // but we know that inside initState() we have to listen:false as show below
+  // Provider.of<ProductPackage>(context, listen: false).fetchAndShowProducts();
+  // and other method is usding didChangeDenendencies()
+  @override
+  void initState() {
+    // Provider.of<ProductPackage>(context, listen: false).fetchAndShowProducts();
+    super.initState();
+  }
+
+  // we should not use async in the inbuild methods istend of it we have used our previous way
+  // which is using then() method
+  @override
+  void didChangeDependencies() {
+    if (!_runDidDependencies) {
+      setState(() {
+        _isLoading = true;
+      });
+      Provider.of<ProductPackage>(context).fetchAndShowProducts().then((_) {
+        setState(() {
+          _isLoading = false;
+        });
+      });
+      _runDidDependencies = true;
+    }
+    super.didChangeDependencies();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +103,11 @@ class _ProductOverviewScreenState extends State<ProductOverviewScreen> {
         ],
       ),
       drawer: DrawerBuilder(),
-      body: ProductsGrid(_showOnlyFavourite),
+      body: _isLoading
+          ? Center(
+              child: CircularProgressIndicator(),
+            )
+          : ProductsGrid(_showOnlyFavourite),
     );
   }
 }

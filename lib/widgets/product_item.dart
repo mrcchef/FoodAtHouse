@@ -56,13 +56,16 @@ class ProductItem extends StatelessWidget {
               // with the change in data, so we have passed it here and not assign it to the
               // suitable place and now it will not rebuild everytime
               return IconButton(
-                color: Theme.of(context).accentColor,
-                //  suitable <field> : child
-                icon: Icon(
-                  product.isFavourite ? Icons.favorite : Icons.favorite_border,
-                ),
-                onPressed: () => product.toggleFavouriteStatus(),
-              );
+                  color: Theme.of(context).accentColor,
+                  //  suitable <field> : child
+                  icon: Icon(
+                    product.isFavourite
+                        ? Icons.favorite
+                        : Icons.favorite_border,
+                  ),
+                  onPressed: () async {
+                    await product.toggleFavouriteStatus();
+                  });
             },
             // child: Text('Never Changes'),
           ),

@@ -101,7 +101,7 @@ class CartList extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             subtitle: Text(
-              'Total \$${(price * quantity)}',
+              'Total \$${(price * quantity).toStringAsPrecision(3)}',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             trailing: Text(

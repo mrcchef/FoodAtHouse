@@ -7,9 +7,25 @@ import '../widgets/cart_list.dart';
 
 class CartScreen extends StatelessWidget {
   static const routeName = '/Cart-screen';
+
   @override
   Widget build(BuildContext context) {
     final cart = Provider.of<Cart>(context);
+    var children2 = <Widget>[
+      Text(
+        'Total',
+        style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+      ),
+      Spacer(), // this shift all the widgets below it, shifts to the right most place
+      Chip(
+        label: Text(
+          "\$${cart.getTotalAmount.toStringAsPrecision(3)}",
+          style: TextStyle(color: Colors.white, fontSize: 20),
+        ),
+        backgroundColor: Theme.of(context).primaryColor,
+      ),
+      BuildOrderButton(cart: cart),
+    ];
     return Scaffold(
       appBar: AppBar(
         title: Text('Cart'),
@@ -23,36 +39,7 @@ class CartScreen extends StatelessWidget {
               child: Container(
                 padding: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
                 child: Row(
-                  children: <Widget>[
-                    Text(
-                      'Total',
-                      style:
-                          TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
-                    ),
-                    Spacer(), // this shift all the widgets below it, shifts to the right most place
-                    Chip(
-                      label: Text(
-                        "\$${cart.getTotalAmount.toStringAsPrecision(3)}",
-                        style: TextStyle(color: Colors.white, fontSize: 20),
-                      ),
-                      backgroundColor: Theme.of(context).primaryColor,
-                    ),
-                    FlatButton(
-                      onPressed: () {
-                        Provider.of<Orders>(context, listen: false).add(
-                            cart.getItems.values.toList(), cart.getTotalAmount);
-                        cart.clear();
-                      },
-                      child: Text(
-                        "ORDER NOW",
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Theme.of(context).primaryColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
+                  children: children2,
                 ),
               ),
             ),
@@ -76,6 +63,51 @@ class CartScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class BuildOrderButton extends StatefulWidget {
+  const BuildOrderButton({
+    Key key,
+    @required this.cart,
+  }) : super(key: key);
+
+  final Cart cart;
+
+  @override
+  _BuildOrderButtonState createState() => _BuildOrderButtonState();
+}
+
+class _BuildOrderButtonState extends State<BuildOrderButton> {
+  bool _isLoading = false;
+  @override
+  Widget build(BuildContext context) {
+    return FlatButton(
+      onPressed: (widget.cart.getTotalAmount <= 0 || _isLoading)
+          ? null
+          : () async {
+              setState(() {
+                _isLoading = true;
+              });
+              await Provider.of<Orders>(context, listen: false).add(
+                  widget.cart.getItems.values.toList(),
+                  widget.cart.getTotalAmount);
+              setState(() {
+                _isLoading = false;
+              });
+              widget.cart.clear();
+            },
+      child: _isLoading
+          ? CircularProgressIndicator()
+          : Text(
+              "ORDER NOW",
+              style: TextStyle(
+                fontSize: 18,
+                color: Theme.of(context).primaryColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
     );
   }
 }
