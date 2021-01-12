@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../screens/product_detail_screen.dart';
 import '../providers/products.dart';
 import '../providers/cart.dart';
+import '../providers/auth.dart';
 
 class ProductItem extends StatelessWidget {
   // final String id;
@@ -64,7 +65,9 @@ class ProductItem extends StatelessWidget {
                         : Icons.favorite_border,
                   ),
                   onPressed: () async {
-                    await product.toggleFavouriteStatus();
+                    final auth = Provider.of<Auth>(context, listen: false);
+                    await product.toggleFavouriteStatus(
+                        auth.getToken, auth.getUserId);
                   });
             },
             // child: Text('Never Changes'),

@@ -21,17 +21,20 @@ class OrderItem {
 class Orders with ChangeNotifier {
   List<OrderItem> _orderList = [];
 
+  final String authToken;
+  final String userId;
+  Orders(this.authToken, this.userId, this._orderList);
+
   List<OrderItem> get getOrderList {
     return [..._orderList];
   }
 
-  // int get getProductsLength {
-  //   return _orderList.length;
-  // }
-
+  // In order to get those products which are particular to a user
+  // for that we have created a folder of userId under orders and there we will
+  // keep all our orders for userId
   Future<void> add(List<CartItem> placedOrders, double totalAmount) async {
-    const url =
-        'https://flutter-shop-9346a-default-rtdb.firebaseio.com/orders.json';
+    final url =
+        'https://flutter-shop-9346a-default-rtdb.firebaseio.com/orders/$userId.json?auth=$authToken';
     final DateTime timeStamp = DateTime.now();
     final response = await http.post(
       url,
@@ -66,8 +69,8 @@ class Orders with ChangeNotifier {
   }
 
   Future<void> fetchAndShowProducts() async {
-    const url =
-        'https://flutter-shop-9346a-default-rtdb.firebaseio.com/orders.json';
+    final url =
+        'https://flutter-shop-9346a-default-rtdb.firebaseio.com/orders/$userId.json?auth=$authToken';
     final response = await http.get(url);
     print(json.decode(response.body));
     List<OrderItem> extractedItem = [];

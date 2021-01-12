@@ -12,12 +12,16 @@ class UserProductScreen extends StatelessWidget {
   // This is a function which will perform as we do refresh and it returns a future
   Future<void> performRefresh(ctx) async {
     await Provider.of<ProductPackage>(ctx, listen: false)
-        .fetchAndShowProducts();
+        .fetchAndShowProducts(true);
+    // paramenter we is true b/c we want to filer here
   }
 
+  // Here we need to fetch userproduct as we open the screen
+  // and that's why we have used FututeBuilder
   @override
   Widget build(BuildContext context) {
-    final productList = Provider.of<ProductPackage>(context);
+    // We have used FutureBuilder and to avoid Infinite loop we used Consumer Widget
+    // final productList = Provider.of<ProductPackage>(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('Your Products'),
@@ -32,26 +36,42 @@ class UserProductScreen extends StatelessWidget {
       ),
       // Refresh Feature is implemented through WIdget RefreshIndicator()
       // On it's OnRefresh Field we have to pass a Future object
-      body: RefreshIndicator(
-        onRefresh: () {
-          return performRefresh(context);
+      body: FutureBuilder(
+        future: performRefresh(context),
+        builder: (ctx, snapShot) {
+          return snapShot.connectionState == ConnectionState.waiting
+              ? Center(
+                  child: CircularProgressIndicator(),
+                )
+              : Consumer<ProductPackage>(
+                  builder: (ctx, productList, child) {
+                    return RefreshIndicator(
+                      onRefresh: () {
+                        return performRefresh(context);
+                      },
+                      child: ListView.builder(
+                        itemCount: productList.getProductLength,
+                        itemBuilder: (ctx, index) {
+                          return Column(
+                            children: [
+                              UserProductItem(
+                                id: productList.getProduts[index].id,
+                                title: productList.getProduts[index].title,
+                                imageUrl:
+                                    productList.getProduts[index].imageUrl,
+                              ),
+                              Divider(),
+                            ],
+                          );
+                        },
+                      ),
+                    );
+                  },
+                  // child:
+                );
         },
-        child: ListView.builder(
-          itemCount: productList.getProductLength,
-          itemBuilder: (ctx, index) {
-            return Column(
-              children: [
-                UserProductItem(
-                  id: productList.getProduts[index].id,
-                  title: productList.getProduts[index].title,
-                  imageUrl: productList.getProduts[index].imageUrl,
-                ),
-                Divider(),
-              ],
-            );
-          },
-        ),
       ),
+
       drawer: DrawerBuilder(),
     );
   }

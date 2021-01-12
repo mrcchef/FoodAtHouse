@@ -46,6 +46,11 @@ class ProductPackage with ChangeNotifier {
   //   ),
   // ];
 
+  final String authToken;
+  final String userId;
+
+  ProductPackage(this.authToken, this.userId, this._items);
+
   List<Product> get getProduts {
     // return _items; // if we simply return it then this way pointer to our list is passed
     // and any change made would refelect to your main data
@@ -72,7 +77,7 @@ class ProductPackage with ChangeNotifier {
     // If there is a element which we are not possing in the patch body then
     // the value of that element remains same
     final url =
-        'https://flutter-shop-9346a-default-rtdb.firebaseio.com/products/$productId.json';
+        'https://flutter-shop-9346a-default-rtdb.firebaseio.com/products/$productId.json?auth=$authToken';
     var index = _items.indexWhere((element) => element.id == productId);
     if (index >= 0) {
       await http.patch(
@@ -112,7 +117,7 @@ class ProductPackage with ChangeNotifier {
 
   Future<void> removeItem(String productId) async {
     final url =
-        'https://flutter-shop-9346a-default-rtdb.firebaseio.com/products/$productId.json';
+        'https://flutter-shop-9346a-default-rtdb.firebaseio.com/products/$productId.json?auth=$authToken';
     var index = _items.indexWhere((element) => element.id == productId);
     var toDeleteProduct = _items[index];
     _items.removeAt(index);
@@ -144,8 +149,8 @@ class ProductPackage with ChangeNotifier {
     // Setup a url through which we will do our queries in our servers
     //   eg: - url + <folder name>.json
     // here products is the folder name
-    const url =
-        'https://flutter-shop-9346a-default-rtdb.firebaseio.com/products.json';
+    final url =
+        'https://flutter-shop-9346a-default-rtdb.firebaseio.com/products.json?auth=$authToken';
     // Now we will use post method which will add data in products folder in our database
     // post() method takes two arguments
     // 1st is the url then 2nd is the body where we have to send our data in json formaat
@@ -162,7 +167,7 @@ class ProductPackage with ChangeNotifier {
             'description': product.description,
             'price': product.price,
             'imageUrl': product.imageUrl,
-            'isFavourite': product.isFavourite,
+            'userId': userId,
           },
         ),
       );
@@ -199,23 +204,50 @@ class ProductPackage with ChangeNotifier {
     }
   }
 
-  Future<void> fetchAndShowProducts() async {
-    const url =
-        'https://flutter-shop-9346a-default-rtdb.firebaseio.com/products.json';
+  // We need to fetch all the products in the products overview screen but in the
+  // manage user product screen, user product should be there
+  // To implement this feature I have used a optional filterByUser variable
+  // which will be responsible to execute which type of filering we want
+  // fiterString containes empty if we don't want to filter otherwise,
+  // we have filtring logic for firebase and also we need to do some necessary change in the rules of database
+  // Logic: We have added one more field called products(folder name where we need to filter)
+  // Now it accepts a map and Key is .indexOn which is understood by firebase
+  // value will ricieve a list of field we need to filter
+  // It looks like "products":{".indexOn":["userId"]},
+  Future<void> fetchAndShowProducts([bool filterByUser = false]) async {
+    String filterString =
+        filterByUser ? 'orderBy="userId"&equalTo="$userId"' : '';
+    var url =
+        'https://flutter-shop-9346a-default-rtdb.firebaseio.com/products.json?auth=$authToken&$filterString';
     try {
+      // TO make sure favourites of particular user is visible at product overview
+      // page, for that we have created one data field for favourites
+      // well the folder is userFavourite and inside it we have userId of the user
+      // and then for all the products we have a value true and false
       final response = await http.get(url);
+      url =
+          'https://flutter-shop-9346a-default-rtdb.firebaseio.com/userFavourite/$userId.json?auth=$authToken';
+      final favouriteResponse = await http.get(url);
+      final favouriteData = json.decode(favouriteResponse.body);
+      // print(favouriteData);
       final List<Product> extractedProduct = [];
       // extractedData is a Map of productId and a Map constituing of productData
       final Map<String, dynamic> extractedData = json.decode(response.body);
       extractedData.forEach((prodId, prodData) {
-        extractedProduct.add(Product(
-          id: prodId,
-          title: prodData['title'],
-          description: prodData['description'],
-          price: prodData['price'],
-          imageUrl: prodData['imageUrl'],
-          isFavourite: prodData['isFavourite'],
-        ));
+        extractedProduct.add(
+          Product(
+            id: prodId,
+            title: prodData['title'],
+            description: prodData['description'],
+            price: prodData['price'],
+            imageUrl: prodData['imageUrl'],
+            isFavourite:
+                // favoriteData == null signifies if there are not favoutire data
+                // fovouriteData[prodId]:- true or false for the prdocut havind product if
+                // ?? operator is used to check favouriteData[prodId] is null or not
+                favouriteData == null ? false : favouriteData[prodId] ?? false,
+          ),
+        );
         // After extracting we have updated our List of product
         _items = extractedProduct;
         notifyListeners();
